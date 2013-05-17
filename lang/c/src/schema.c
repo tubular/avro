@@ -886,6 +886,9 @@ avro_schema_from_json_t(json_t *json, avro_schema_t *schema,
 			if (json_is_string(json_namespace)) {
 				record_namespace =
 				    json_string_value(json_namespace);
+				if (strlen(record_namespace) == 0) {
+					record_namespace = NULL;
+				}
 			} else {
 				record_namespace = parent_namespace;
 			}
@@ -1541,7 +1544,9 @@ static int write_record(avro_writer_t out, const struct avro_record_schema_t *re
 	check(rval, avro_write_str(out, "\","));
 	if (nullstrcmp(record->space, parent_namespace)) {
 		check(rval, avro_write_str(out, "\"namespace\":\""));
-		check(rval, avro_write_str(out, record->space));
+		if (record->space != NULL) {
+			check(rval, avro_write_str(out, record->space));
+		}
 		check(rval, avro_write_str(out, "\","));
 	}
 	check(rval, avro_write_str(out, "\"fields\":["));
