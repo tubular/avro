@@ -620,9 +620,11 @@ avro_file_writer_append_value(avro_file_writer_t w, avro_value_t *value)
 		check(rval, file_write_block(w));
 		rval = avro_value_write(w->datum_writer, value);
 		if (rval) {
-			avro_set_error("Value too large for file block size");
-			/* TODO: if the value encoder larger than our buffer,
-			   just write a single large datum */
+			if (rval == ENOSPC) {
+				avro_set_error("Value too large for file block size");
+				/* TODO: if the value encoder larger than our buffer,
+				   just write a single large datum */
+			}
 			return rval;
 		}
 	}
