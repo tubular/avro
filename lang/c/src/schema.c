@@ -874,10 +874,6 @@ avro_schema_from_json_t(json_t *json, avro_schema_t *schema,
 				return EINVAL;
 			}
 			num_fields = json_array_size(json_fields);
-			if (num_fields == 0) {
-				avro_set_error("Record type must have at least one field");
-				return EINVAL;
-			}
 			record_name = json_string_value(json_name);
 			if (!record_name) {
 				avro_set_error("Record type must have a \"name\"");
