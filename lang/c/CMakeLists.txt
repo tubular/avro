@@ -151,6 +151,17 @@ else (SNAPPY_FOUND AND ZLIB_FOUND)
     message("Disabled snappy codec. libsnappy not found or zlib not found.")
 endif (SNAPPY_FOUND AND ZLIB_FOUND)
 
+find_package(Lz4)
+if (LZ4_FOUND AND ZLIB_FOUND)  # LZ4 borrows crc32 from zlib
+    set(LZ4_PKG liblz4)
+    add_definitions(-DLZ4_CODEC)
+    message("Enabled lz4 codec")
+else (LZ4_FOUND AND ZLIB_FOUND)
+    set(LZ4_PKG "")
+    set(LZ4_LIBRARIES "")
+    message("Disabled lz4 codec. liblz4 not found or zlib not found.")
+endif (LZ4_FOUND AND ZLIB_FOUND)
+
 find_package(PkgConfig)
 pkg_check_modules(LZMA liblzma)
 if (LZMA_FOUND)
@@ -165,8 +176,8 @@ else (LZMA_FOUND)
     message("Disabled lzma codec. liblzma not found.")
 endif (LZMA_FOUND)
 
-set(CODEC_LIBRARIES ${ZLIB_LIBRARIES} ${LZMA_LIBRARIES} ${SNAPPY_LIBRARIES})
-set(CODEC_PKG "@ZLIB_PKG@ @LZMA_PKG@ @SNAPPY_PKG@")
+set(CODEC_LIBRARIES ${ZLIB_LIBRARIES} ${LZMA_LIBRARIES} ${SNAPPY_LIBRARIES} ${LZ4_LIBRARIES})
+set(CODEC_PKG "@ZLIB_PKG@ @LZMA_PKG@ @SNAPPY_PKG@ @LZ4_PKG@")
 
 # Jansson JSON library
 pkg_check_modules(JANSSON jansson>=2.3)

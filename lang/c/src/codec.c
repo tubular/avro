@@ -28,6 +28,18 @@
 #    include <byteswap.h>
 #  endif
 #endif
+#ifdef LZ4_CODEC
+#include <lz4.h>
+#include <endian.h>
+#  ifndef SNAPPY_CODEC
+#    if defined(__APPLE__)
+#      include <libkern/OSByteOrder.h>
+#      define __bswap_32 OSSwapInt32
+#    else
+#      include <byteswap.h>
+#    endif
+#  endif
+#endif
 #ifdef DEFLATE_CODEC
 #include <zlib.h>
 #endif
@@ -188,6 +200,118 @@ static int reset_snappy(avro_codec_t c)
 }
 
 #endif // SNAPPY_CODEC
+
+/* LZ4 codec */
+
+#ifdef LZ4_CODEC
+
+static int
+codec_lz4(avro_codec_t codec)
+{
+	codec->name = "lz4";
+	codec->type = AVRO_CODEC_LZ4;
+	codec->block_size = 0;
+	codec->used_size = 0;
+	codec->block_data = NULL;
+	codec->codec_data = NULL;
+
+	return 0;
+}
+
+static int encode_lz4(avro_codec_t c, void * data, int64_t len)
+{
+    if (len > LZ4_MAX_INPUT_SIZE) {
+		avro_set_error("Block too big for lz4: %d", len);
+		return 1;
+    }
+
+    uint32_t crc;
+    size_t outlen = LZ4_compressBound(len);
+
+	if (!c->block_data) {
+		c->block_data = avro_malloc(outlen+8);
+	} else if (c->block_size < (int64_t) (outlen+8)) {
+        c->block_data = avro_realloc(c->block_data, c->block_size, (outlen+8));
+	}
+    c->block_size = outlen+8;
+
+	if (!c->block_data) {
+		avro_set_error("Cannot allocate memory for lz4");
+		return 1;
+	}
+
+	// write size
+	int32_t be32len = htobe32((int32_t) len);
+	memcpy(c->block_data, &be32len, 4);
+
+    if (LZ4_compress(data, c->block_data+4, len) == 0)
+    {
+        avro_set_error("Error compressing block with lz4");
+		return 1;
+	}
+
+    crc = __bswap_32(crc32(0, data, len));
+    memcpy(c->block_data+outlen+4, &crc, 4);
+    c->used_size = outlen+8;
+
+	return 0;
+}
+
+static int decode_lz4(avro_codec_t c, void * data, int64_t len)
+{
+    uint32_t crc;
+    int32_t outlen;
+
+	int32_t be32len;
+	memcpy(&be32len, data, 4);
+	outlen = be32toh(be32len);
+
+	if (!c->block_data) {
+		c->block_data = avro_malloc(outlen);
+	} else if ((int32_t)c->block_size < outlen) {
+		c->block_data = avro_realloc(c->block_data, c->block_size, outlen);
+	}
+    c->block_size = outlen;
+
+	if (!c->block_data)
+	{
+		avro_set_error("Cannot allocate memory for lz4");
+		return 1;
+	}
+
+    if (LZ4_decompress_safe(data+4, c->block_data, len-8, outlen) < 0)
+    {
+        avro_set_error("Error uncompressing block with lz4");
+		return 1;
+	}
+
+    crc = __bswap_32(crc32(0, c->block_data, outlen));
+    if (memcmp(&crc, (char*)data+len-4, 4))
+    {
+        avro_set_error("CRC32 check failure uncompressing block with Snappy");
+		return 1;
+	}
+
+    c->used_size = outlen;
+
+	return 0;
+}
+
+static int reset_lz4(avro_codec_t c)
+{
+	if (c->block_data) {
+		avro_free(c->block_data, c->block_size);
+	}
+
+	c->block_data = NULL;
+	c->block_size = 0;
+	c->used_size = 0;
+	c->codec_data = NULL;
+
+	return 0;
+}
+
+#endif // LZ4_CODEC
 
 /* Deflate codec */
 
@@ -527,6 +651,12 @@ int avro_codec(avro_codec_t codec, const char *type)
 	}
 #endif
 
+#ifdef LZ4_CODEC
+	if (strcmp("lz4", type) == 0) {
+		return codec_lz4(codec);
+	}
+#endif
+
 #ifdef DEFLATE_CODEC
 	if (strcmp("deflate", type) == 0) {
 		return codec_deflate(codec);
@@ -557,6 +687,10 @@ int avro_codec_encode(avro_codec_t c, void * data, int64_t len)
 	case AVRO_CODEC_SNAPPY:
 		return encode_snappy(c, data, len);
 #endif
+#ifdef LZ4_CODEC
+	case AVRO_CODEC_LZ4:
+		return encode_lz4(c, data, len);
+#endif
 #ifdef DEFLATE_CODEC
 	case AVRO_CODEC_DEFLATE:
 		return encode_deflate(c, data, len);
@@ -580,6 +714,10 @@ int avro_codec_decode(avro_codec_t c, void * data, int64_t len)
 	case AVRO_CODEC_SNAPPY:
 		return decode_snappy(c, data, len);
 #endif
+#ifdef LZ4_CODEC
+	case AVRO_CODEC_LZ4:
+		return decode_lz4(c, data, len);
+#endif
 #ifdef DEFLATE_CODEC
 	case AVRO_CODEC_DEFLATE:
 		return decode_deflate(c, data, len);
@@ -602,6 +740,10 @@ int avro_codec_reset(avro_codec_t c)
 #ifdef SNAPPY_CODEC
 	case AVRO_CODEC_SNAPPY:
 		return reset_snappy(c);
+#endif
+#ifdef LZ4_CODEC
+	case AVRO_CODEC_LZ4:
+		return reset_lz4(c);
 #endif
 #ifdef DEFLATE_CODEC
 	case AVRO_CODEC_DEFLATE:
