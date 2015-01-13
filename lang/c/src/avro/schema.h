@@ -53,7 +53,7 @@ int avro_schema_record_field_append(const avro_schema_t record,
 				    const avro_schema_t type);
 size_t avro_schema_record_size(const avro_schema_t record);
 
-avro_schema_t avro_schema_enum(const char *name);
+avro_schema_t avro_schema_enum(const char *name, const char *space);
 const char *avro_schema_enum_get(const avro_schema_t enump,
 				 int index);
 int avro_schema_enum_get_by_name(const avro_schema_t enump,

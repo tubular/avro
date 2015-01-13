@@ -153,7 +153,7 @@ static int test_enum(void)
 		AVRO_RUBY,
 		AVRO_JAVA
 	};
-	avro_schema_t schema = avro_schema_enum("language");
+	avro_schema_t schema = avro_schema_enum("language", NULL);
 
 	avro_schema_enum_symbol_append(schema, "C");
 	avro_schema_enum_symbol_append(schema, "C++");
