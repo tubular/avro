@@ -60,6 +60,7 @@ int avro_schema_enum_get_by_name(const avro_schema_t enump,
 				 const char *symbol_name);
 int avro_schema_enum_symbol_append(const avro_schema_t
 				   enump, const char *symbol);
+int avro_schema_enum_number_of_symbols(const avro_schema_t enump);
 
 avro_schema_t avro_schema_fixed(const char *name, const int64_t len);
 int64_t avro_schema_fixed_size(const avro_schema_t fixed);
