@@ -299,7 +299,7 @@ static int file_read_header(avro_reader_t reader,
 		strncpy(codec_name, (const char *) buf, size < 10 ? size : 10);
 
 		if (avro_codec(codec, codec_name) != 0) {
-			avro_set_error("File header contains an unknown codec");
+			avro_set_error("File header contains an unknown codec: %s", codec_name);
 			avro_value_decref(&meta);
 			return EILSEQ;
 		}
