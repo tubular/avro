@@ -549,11 +549,7 @@ avro_schema_enum_number_of_symbols(const avro_schema_t enum_schema)
 	return enump->symbols->num_entries;
 }
 
-int
-avro_schema_record_field_append(const avro_schema_t record_schema,
-				const char *field_name,
-				const avro_schema_t field_schema)
-static bool
+static int
 is_equal_schema_type(const avro_schema_t field_schema, const json_t *field_default)
 {
 	int  json_type = json_typeof(field_default);
@@ -588,7 +584,7 @@ is_equal_schema_type(const avro_schema_t field_schema, const json_t *field_defau
 	case AVRO_LINK:
 		return json_type == JSON_OBJECT;
 	}
-	return false;
+	return 0;
 }
 
 static int
