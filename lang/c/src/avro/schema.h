@@ -26,8 +26,9 @@ extern "C" {
 
 #include <avro/platform.h>
 #include <stdlib.h>
-
 #include <avro/basics.h>
+
+#include "jansson.h"
 
 typedef struct avro_obj_t *avro_schema_t;
 
@@ -118,5 +119,6 @@ int avro_schema_decref(avro_schema_t schema);
 int avro_schema_match(avro_schema_t writers_schema,
 		      avro_schema_t readers_schema);
 
+int is_equal_schema_type(const avro_schema_t field_schema, const json_t *field_default);
 CLOSE_EXTERN
 #endif

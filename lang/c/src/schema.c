@@ -549,7 +549,7 @@ avro_schema_enum_number_of_symbols(const avro_schema_t enum_schema)
 	return enump->symbols->num_entries;
 }
 
-static int
+int
 is_equal_schema_type(const avro_schema_t field_schema, const json_t *field_default)
 {
 	int  json_type = json_typeof(field_default);
@@ -557,6 +557,8 @@ is_equal_schema_type(const avro_schema_t field_schema, const json_t *field_defau
 	switch (avro_typeof(field_schema)) {
 	case AVRO_STRING:
 	case AVRO_BYTES:
+	case AVRO_ENUM:
+	case AVRO_FIXED:
 		return json_type == JSON_STRING;
 
 	case AVRO_INT32:
@@ -577,12 +579,14 @@ is_equal_schema_type(const avro_schema_t field_schema, const json_t *field_defau
 		return json_type == JSON_ARRAY;
 
 	case AVRO_RECORD:
-	case AVRO_ENUM:
-	case AVRO_FIXED:
 	case AVRO_MAP:
-	case AVRO_UNION:
 	case AVRO_LINK:
 		return json_type == JSON_OBJECT;
+
+	case AVRO_UNION:
+		// Default values for union fields correspond to the first schema in the union
+		return is_equal_schema_type(avro_schema_union_branch(field_schema,0), field_default);
+
 	}
 	return 0;
 }
