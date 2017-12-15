@@ -26,6 +26,7 @@
 #else
  #include <dirent.h>
 #endif
+#include "jansson.h"
 
 int test_cases = 0;
 avro_writer_t avro_stderr;
@@ -268,6 +269,185 @@ static int test_union(void)
 	return 0;
 }
 
+static int test_complex_types_defaults_schema_equal(void)
+{
+	avro_schema_t schema;
+	json_t* jobj = NULL;
+	int res = 0;
+
+	// enum
+	schema = avro_schema_enum("name", "space");
+	jobj = json_string("test");
+	res = is_equal_schema_type(schema, jobj);
+	if(res == 0)
+	{
+		fprintf(stderr, "Unexpected 'enum' defaults in valid schema. \n");
+		exit(EXIT_FAILURE);
+	}
+	json_decref(jobj);
+	avro_schema_decref(schema);
+
+	// fixed
+	schema = avro_schema_fixed("name", 5);
+	jobj = json_string("test");
+	res = is_equal_schema_type(schema, jobj);
+	if(res == 0)
+	{
+		fprintf(stderr, "Unexpected 'fixed' defaults in valid schema. \n");
+		exit(EXIT_FAILURE);
+	}
+	json_decref(jobj);
+	avro_schema_decref(schema);
+
+	// map
+	avro_schema_t foo_schema = avro_schema_bytes();
+	schema = avro_schema_map(foo_schema);
+	jobj = json_object();
+	res = is_equal_schema_type(schema, jobj);
+	if(res == 0)
+	{
+		fprintf(stderr, "Unexpected 'map' defaults in valid schema. \n");
+		exit(EXIT_FAILURE);
+	}
+	json_decref(jobj);
+	avro_schema_decref(foo_schema);
+	avro_schema_decref(schema);
+
+	// union
+	schema = avro_schema_union();
+	avro_schema_union_append(schema, avro_schema_string());
+	avro_schema_union_append(schema, avro_schema_int());
+	avro_schema_union_append(schema, avro_schema_null());
+	jobj = json_string("test_union");
+	res = is_equal_schema_type(schema, jobj);
+	if(res == 0)
+	{
+		fprintf(stderr, "Unexpected 'union' defaults in valid schema. \n");
+		exit(EXIT_FAILURE);
+	}
+	json_decref(jobj);
+	avro_schema_decref(schema);
+
+	// record
+	schema = avro_schema_record("test_record", NULL);
+	jobj = json_object();
+	res = is_equal_schema_type(schema, jobj);
+	if(res == 0)
+	{
+		fprintf(stderr, "Unexpected 'record' defaults in valid schema. \n");
+		exit(EXIT_FAILURE);
+	}
+	json_decref(jobj);
+	avro_schema_decref(schema);
+
+	// array
+	schema = avro_schema_array(avro_schema_int());
+	jobj = json_array();
+	res = is_equal_schema_type(schema, jobj);
+	if(res == 0)
+	{
+		fprintf(stderr, "Unexpected 'array' defaults in valid schema. \n");
+		exit(EXIT_FAILURE);
+	}
+	json_decref(jobj);
+	avro_schema_decref(schema);
+
+	return 0;
+}
+
+static int test_primitive_types_defaults_schema_equal(void)
+{
+	avro_schema_t schema;
+	json_t* jobj = NULL;
+	int res = 0;
+
+	// string
+	schema = avro_schema_string();
+	jobj = json_string("test");
+	res = is_equal_schema_type(schema, jobj);
+	if(res == 0)
+	{
+		fprintf(stderr, "Unexpected 'string' defaults in valid schema. \n");
+		exit(EXIT_FAILURE);
+	}
+	json_decref(jobj);
+	avro_schema_decref(schema);
+
+	// bytes
+	schema = avro_schema_bytes();
+	jobj = json_string("00FF");
+	res = is_equal_schema_type(schema, jobj);
+	if(res == 0)
+	{
+		fprintf(stderr, "Unexpected 'bytes' defaults in valid schema. \n");
+		exit(EXIT_FAILURE);
+	}
+	json_decref(jobj);
+	avro_schema_decref(schema);
+
+	// int
+	schema = avro_schema_int();
+	jobj = json_integer(1);
+	res = is_equal_schema_type(schema, jobj);
+	if(res == 0)
+	{
+		fprintf(stderr, "Unexpected 'int' defaults in valid schema. \n");
+		exit(EXIT_FAILURE);
+	}
+	json_decref(jobj);
+	avro_schema_decref(schema);
+
+	// long
+	schema = avro_schema_long();
+	jobj = json_integer(1000);
+	res = is_equal_schema_type(schema, jobj);
+	if(res == 0)
+	{
+		fprintf(stderr, "Unexpected 'long' defaults in valid schema. \n");
+		exit(EXIT_FAILURE);
+	}
+	json_decref(jobj);
+	avro_schema_decref(schema);
+
+	// float
+	schema = avro_schema_float();
+	jobj = json_real(1000.12);
+	res = is_equal_schema_type(schema, jobj);
+	if(res == 0)
+	{
+		fprintf(stderr, "Unexpected 'float' defaults in valid schema. \n");
+		exit(EXIT_FAILURE);
+	}
+	json_decref(jobj);
+	avro_schema_decref(schema);
+
+	// double
+	schema = avro_schema_double();
+	jobj = json_real(1000.1234567);
+	res = is_equal_schema_type(schema, jobj);
+	if(res == 0)
+	{
+		fprintf(stderr, "Unexpected 'double' defaults in valid schema. \n");
+		exit(EXIT_FAILURE);
+	}
+	json_decref(jobj);
+	avro_schema_decref(schema);
+
+	// null
+	schema = avro_schema_null();
+	jobj = json_null();
+	res = is_equal_schema_type(schema, jobj);
+	if(res == 0)
+	{
+		fprintf(stderr, "Unexpected 'double' defaults in valid schema. \n");
+		exit(EXIT_FAILURE);
+	}
+	json_decref(jobj);
+	avro_schema_decref(schema);
+
+	return 0;
+}
+
 int main(int argc, char *argv[])
 {
 	char *srcdir = getenv("srcdir");
@@ -304,6 +484,10 @@ int main(int argc, char *argv[])
 	test_record();
 	fprintf(stderr, "*** Running union tests **\n");
 	test_union();
+	fprintf(stderr, "*** Running complex types default values tests **\n");
+	test_complex_types_defaults_schema_equal();
+	fprintf(stderr, "*** Running primitive types default values tests **\n");
+	test_primitive_types_defaults_schema_equal();
 
 	fprintf(stderr, "==================================================\n");
 	fprintf(stderr,
