@@ -1,17 +1,6 @@
 #include "avro.h"
 #include "avro_private.h"
 
-#define RUN_TEST(test) \
-    if(test() != 0) \
-        return EXIT_FAILURE;
-
-#define CHECK_RESOLUTION(source_val, dest_val, dest_type, msg) \
-    if((dest_type)(source_val) != dest_val ) \
-    { \
-        fprintf(stderr, msg); \
-        return EXIT_FAILURE; \
-    }
-
 #define CHECK_CASE(expected, actual, msg) \
     if((expected) != (actual)) \
     { \
