@@ -222,7 +222,7 @@ static int resolve_type_long_source(avro_reader_t reader, avro_value_t *source, 
         case AVRO_DOUBLE:
             return avro_value_set_double(dest, (double)val);
         case AVRO_INT64:
-            return avro_value_set_int(dest, val);
+            return avro_value_set_long(dest, val);
     }
     avro_set_error("Invalid type in readers schema.");
     return EINVAL;
