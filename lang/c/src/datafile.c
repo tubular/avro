@@ -745,6 +745,38 @@ avro_file_reader_read_value(avro_file_reader_t r, avro_value_t *value)
 	return 0;
 }
 
+int
+avro_file_reader_read_value_with_resolution(avro_file_reader_t r, avro_value_t *source, avro_value_t *value)
+{
+    int rval;
+    char sync[16];
+
+    check_param(EINVAL, r, "reader");
+    check_param(EINVAL, value, "value");
+
+    /* This will be set to zero when an empty file is opened.
+     * Return EOF here when the user attempts to read. */
+    if (r->blocks_total == 0)
+        return EOF;
+
+    if (r->blocks_read == r->blocks_total) {
+        /* reads sync bytes and buffers further bytes */
+        check(rval, avro_read(r->reader, sync, sizeof(sync)));
+        if (memcmp(r->sync, sync, sizeof(r->sync)) != 0) {
+            /* wrong sync bytes */
+            avro_set_error("Incorrect sync bytes");
+            return EILSEQ;
+        }
+
+        check(rval, file_read_block_count(r));
+    }
+
+    check(rval, avro_value_read_with_resolution(r->block_reader, source, value));
+    r->blocks_read++;
+
+    return 0;
+}
+
 int avro_file_reader_close(avro_file_reader_t reader)
 {
 	avro_schema_decref(reader->writers_schema);

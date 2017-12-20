@@ -26,6 +26,7 @@
 #include "avro/value.h"
 #include "avro_private.h"
 #include "encoding.h"
+#include "value-read.h"
 
 
 /*
@@ -34,11 +35,11 @@
  * reset in avro_value_read itself).
  */
 
-static int
+int
 read_value(avro_reader_t reader, avro_value_t *dest);
 
 
-static int
+int
 read_array_value(avro_reader_t reader, avro_value_t *dest)
 {
 	int  rval;
@@ -75,7 +76,7 @@ read_array_value(avro_reader_t reader, avro_value_t *dest)
 }
 
 
-static int
+int
 read_map_value(avro_reader_t reader, avro_value_t *dest)
 {
 	int  rval;
@@ -128,7 +129,7 @@ read_map_value(avro_reader_t reader, avro_value_t *dest)
 }
 
 
-static int
+int
 read_record_value(avro_reader_t reader, avro_value_t *dest)
 {
 	int  rval;
@@ -155,7 +156,7 @@ read_record_value(avro_reader_t reader, avro_value_t *dest)
 }
 
 
-static int
+int
 read_union_value(avro_reader_t reader, avro_value_t *dest)
 {
 	int rval;
@@ -188,12 +189,7 @@ read_union_value(avro_reader_t reader, avro_value_t *dest)
  * allocated using avro_malloc.
  */
 
-struct avro_wrapped_alloc {
-	const void  *original;
-	size_t  allocated_size;
-};
-
-static void
+void
 avro_wrapped_alloc_free(avro_wrapped_buffer_t *self)
 {
 	struct avro_wrapped_alloc  *alloc = (struct avro_wrapped_alloc *) self->user_data;
@@ -201,7 +197,7 @@ avro_wrapped_alloc_free(avro_wrapped_buffer_t *self)
 	avro_freet(struct avro_wrapped_alloc, alloc);
 }
 
-static int
+int
 avro_wrapped_alloc_new(avro_wrapped_buffer_t *dest,
 		       const void *buf, size_t length)
 {
@@ -223,7 +219,7 @@ avro_wrapped_alloc_new(avro_wrapped_buffer_t *dest,
 }
 
 
-static int
+int
 read_value(avro_reader_t reader, avro_value_t *dest)
 {
 	int  rval;

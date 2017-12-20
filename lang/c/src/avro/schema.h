@@ -45,6 +45,18 @@ avro_schema_t avro_schema_record(const char *name, const char *space);
 avro_schema_t avro_schema_record_field_get(const avro_schema_t
 					   record, const char *field_name);
 const char *avro_schema_record_field_name(const avro_schema_t schema, int index);
+
+/*
+ * Default values
+ */
+json_t* avro_schema_record_field_default(const avro_schema_t schema, const char* field_name);
+
+char* avro_get_default_string_value(json_t* json_default);
+int avro_get_default_int_value(json_t* json_default);
+float avro_get_default_float_value(json_t* json_default);
+double avro_get_default_double_value(json_t* json_default);
+int8_t avro_get_default_bool_value(json_t* json_default);
+
 int avro_schema_record_field_get_index(const avro_schema_t schema,
 				       const char *field_name);
 avro_schema_t avro_schema_record_field_get_by_index
