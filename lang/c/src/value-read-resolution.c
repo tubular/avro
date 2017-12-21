@@ -487,7 +487,7 @@ int resolve_unions(avro_reader_t reader, avro_value_t *source, avro_value_t *des
     check_prefix(rval, avro_binary_encoding.
                  read_long(reader, &discriminant),
                  "Cannot read union discriminant: ");
-    
+
     union_schema_source = avro_value_get_schema(source);
     branch_count_source = avro_schema_union_size(union_schema_source);
     
@@ -499,8 +499,11 @@ int resolve_unions(avro_reader_t reader, avro_value_t *source, avro_value_t *des
         return 1;
     }
     
-    avro_value_get_current_branch(source, &branch_source);
+    check_prefix(rval,
+                 avro_value_set_branch(source, discriminant, &branch_source),
+                 "Cannot set current branch");
     avro_schema_t source_branch_schema = avro_value_get_schema(&branch_source);
+    
     for(int i = 0; i<branch_count_dest; ++i)
     {
         // The first schema in the reader's union that matches the selected writer's union schema
