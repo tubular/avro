@@ -439,9 +439,29 @@ read_union_value_with_resolution(avro_reader_t reader, avro_value_t *source, avr
     else if ((rtype != AVRO_UNION) && (wtype == AVRO_UNION))
     {
         // writer is union, reader is not
-        avro_value_t* branch_source;
-        avro_value_get_current_branch(source, branch_source);
-        return read_value_with_resolution(reader, branch_source, dest);
+        // must read discriminant value (long) from buffer
+        // before reading actual branch value.
+
+        int rval;
+        int64_t discriminant;
+        int64_t  branch_count;
+        avro_value_t  branch;
+
+        check_prefix(rval, avro_binary_encoding.
+                     read_long(reader, &discriminant),
+                     "Cannot read union discriminant: ");
+
+        branch_count = avro_schema_union_size(wschema);
+
+        if (discriminant < 0 || discriminant >= branch_count) {
+            avro_set_error("Invalid union discriminant value: (%d)",
+                           discriminant);
+            return 1;
+        }
+
+        check(rval, avro_value_set_branch(source, discriminant, &branch));
+        avro_value_get_current_branch(source, &branch);
+        return read_value_with_resolution(reader, &branch, dest);
     }
     else
         return -1;
