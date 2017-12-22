@@ -42,6 +42,8 @@ static int read_default_value(avro_schema_t reader_schema, const char* field_nam
             return avro_value_set_boolean(dest, val);
         }
     }
+    avro_set_error("Cannot read default value for specified type.");
+    return EINVAL;
 }
 
 /*
@@ -115,8 +117,8 @@ static int read_record_value_with_resolution(avro_reader_t reader, avro_value_t 
             int has_def = def_val == NULL ? 0 : 1;
             if(has_def == 0)
             {
-                avro_set_error("Schema resolution error! There must be default \
-                               value set for fields missing in writer's schema.");
+                avro_set_error("Schema resolution error! There must be default "
+                               "value set for fields missing in writer's schema.");
                 return EINVAL;
             }
             // read default value
@@ -213,7 +215,7 @@ static int resolve_type_long_source(avro_reader_t reader, avro_value_t *source, 
     int64_t  val;
     check_prefix(rval, avro_binary_encoding.
                  read_long(reader, &val),
-                 "Cannot read int value: ");
+                 "Cannot read long value: ");
     
     // Int64 is promotable to Float and Double
     switch(avro_value_get_type(dest)){
@@ -272,7 +274,7 @@ static int resolve_type_string_source(avro_reader_t reader, avro_value_t *source
      */
     check_prefix(rval, avro_binary_encoding.
                  read_string(reader, &str, &size),
-                 "Cannot read string value hack: ");
+                 "Cannot read string value: ");
     
     avro_wrapped_buffer_t  buf;
     check(rval, avro_wrapped_alloc_new(&buf, str, size));
@@ -324,13 +326,6 @@ static int resolve_type_fixed_source(avro_reader_t reader, avro_value_t *source,
 int read_value_with_resolution(avro_reader_t reader, avro_value_t *source, avro_value_t *dest)
 {
     int  rval;
-    avro_schema_t wschema = avro_value_get_schema(source);
-    avro_schema_t rschema = avro_value_get_schema(dest);
-    if(avro_schema_match(wschema, rschema) == 0)
-    {
-        avro_set_error("Schema resolution error!");
-        return EINVAL;
-    }
     switch (avro_value_get_type(source))
     {
         case AVRO_BOOLEAN:
@@ -404,6 +399,13 @@ int avro_value_read_with_resolution(avro_reader_t reader, avro_value_t *source, 
 {
     int  rval;
     check(rval, avro_value_reset(dest));
+    avro_schema_t wschema = avro_value_get_schema(source);
+    avro_schema_t rschema = avro_value_get_schema(dest);
+    if(avro_schema_match(wschema, rschema) != 0)
+    {
+        avro_set_error("Schema resolution error!");
+        return EINVAL;
+    }
     return read_value_with_resolution(reader, source, dest);
 }
 
@@ -434,7 +436,8 @@ read_union_value_with_resolution(avro_reader_t reader, avro_value_t *source, avr
                 return read_value_with_resolution(reader, source, &branch_dest);
             }
         }
-        return -1;
+        avro_set_error("There is no compatible branch in readers schema!");
+        return EINVAL;
     }
     else if ((rtype != AVRO_UNION) && (wtype == AVRO_UNION))
     {
@@ -456,15 +459,19 @@ read_union_value_with_resolution(avro_reader_t reader, avro_value_t *source, avr
         if (discriminant < 0 || discriminant >= branch_count) {
             avro_set_error("Invalid union discriminant value: (%d)",
                            discriminant);
-            return 1;
+            return EINVAL;
         }
 
         check(rval, avro_value_set_branch(source, discriminant, &branch));
-        avro_value_get_current_branch(source, &branch);
+        check(rval, avro_value_get_current_branch(source, &branch));
         return read_value_with_resolution(reader, &branch, dest);
     }
     else
-        return -1;
+    {
+        // Shouldn't be here
+        avro_set_error("Cannot resolve unions.");
+        return EINVAL;
+    }
 }
 
 /*
