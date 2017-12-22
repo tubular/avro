@@ -401,7 +401,7 @@ int avro_value_read_with_resolution(avro_reader_t reader, avro_value_t *source, 
     check(rval, avro_value_reset(dest));
     avro_schema_t wschema = avro_value_get_schema(source);
     avro_schema_t rschema = avro_value_get_schema(dest);
-    if(avro_schema_match(wschema, rschema) != 0)
+    if(avro_schema_match(wschema, rschema) == 0)
     {
         avro_set_error("Schema resolution error!");
         return EINVAL;
