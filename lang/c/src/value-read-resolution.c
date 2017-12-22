@@ -426,7 +426,8 @@ read_union_value_with_resolution(avro_reader_t reader, avro_value_t *source, avr
         // reader is union, writer is not
         int64_t  branch_count_dest;
         branch_count_dest = avro_schema_union_size(rschema);
-        for(int i = 0; i<branch_count_dest; ++i)
+        int i = 0;
+        for(i = 0; i<branch_count_dest; ++i)
         {
             avro_schema_t  branch_schema = avro_schema_union_branch(rschema, i);
             if(avro_schema_match(wschema, branch_schema))
@@ -503,15 +504,15 @@ int resolve_unions(avro_reader_t reader, avro_value_t *source, avro_value_t *des
     if (discriminant < 0 || discriminant >= branch_count_source) {
         avro_set_error("Invalid union discriminant value: (%d)",
                        discriminant);
-        return 1;
+        return EINVAL;
     }
     
     check_prefix(rval,
                  avro_value_set_branch(source, discriminant, &branch_source),
                  "Cannot set current branch");
     avro_schema_t source_branch_schema = avro_value_get_schema(&branch_source);
-    
-    for(int i = 0; i<branch_count_dest; ++i)
+    int i = 0;
+    for(i = 0; i<branch_count_dest; ++i)
     {
         // The first schema in the reader's union that matches the selected writer's union schema
         // is recursively resolved against it. if none match, an error is signalled.
