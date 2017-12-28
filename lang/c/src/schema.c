@@ -801,9 +801,9 @@ double avro_get_default_double_value(json_t* json_default)
     return (double)json_real_value(json_default);
 }
 
-int8_t avro_get_default_bool_value(json_t* json_default)
+bool avro_get_default_bool_value(json_t* json_default)
 {
-    return (int8_t)json_is_true(json_default);
+    return (bool)json_is_true(json_default);
 }
 
 avro_schema_t avro_schema_record_field_get_by_index

@@ -50,7 +50,7 @@ static int read_default_value(avro_schema_t reader_schema, const char* field_nam
         }
         case AVRO_BOOLEAN:
         {
-            int8_t val = avro_get_default_bool_value(def_val);
+            bool val = avro_get_default_bool_value(def_val);
             return avro_value_set_boolean(dest, val);
         }
     }
@@ -95,13 +95,13 @@ static int read_record_value_with_resolution(avro_reader_t reader, avro_value_t 
         check(rval, avro_value_get_by_index(source, i, &field, NULL));
         char* field_name =  avro_schema_record_field_name(record_schema_writer, i);
         
-        int reades_index = avro_schema_record_field_get_index(record_schema_reader, field_name);
+        int reader_index = avro_schema_record_field_get_index(record_schema_reader, field_name);
         
-        if (reades_index > -1) {
+        if (reader_index > -1) {
             // ok, reader's schema has the field with the same name too,
             // lets do schema resolution.
             avro_value_t reader_field;
-            check(rval, avro_value_get_by_index(dest, reades_index, &reader_field, NULL));
+            check(rval, avro_value_get_by_index(dest, reader_index, &reader_field, NULL));
             
             check(rval, read_value_with_resolution(reader, &field, &reader_field));
 
