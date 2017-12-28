@@ -147,7 +147,7 @@ static int read_record_value_with_resolution(avro_reader_t reader, avro_value_t 
 }
 
 // Simple macro to check if dest field is union before setting the value.
-#define avro_resolve_source(reader, source, dest, type) \
+#define AVRO_RESOLVE_SOURCE(reader, source, dest, type) \
     (avro_value_get_type(dest) == AVRO_UNION ? read_union_value_with_resolution(reader, source, dest) : \
         resolve_##type##_source(reader, source, dest))
 
@@ -342,35 +342,35 @@ int read_value_with_resolution(avro_reader_t reader, avro_value_t *source, avro_
     {
         case AVRO_BOOLEAN:
         {
-            return avro_resolve_source(reader, source, dest, type_boolean);
+            return AVRO_RESOLVE_SOURCE(reader, source, dest, type_boolean);
         }
         case AVRO_BYTES:
         {
-            return avro_resolve_source(reader, source, dest, type_bytes);
+            return AVRO_RESOLVE_SOURCE(reader, source, dest, type_bytes);
         }
         case AVRO_DOUBLE:
         {
-            return avro_resolve_source(reader, source, dest, type_double);
+            return AVRO_RESOLVE_SOURCE(reader, source, dest, type_double);
         }
         case AVRO_FLOAT:
         {
-            return avro_resolve_source(reader, source, dest, type_float);
+            return AVRO_RESOLVE_SOURCE(reader, source, dest, type_float);
         }
         case AVRO_INT64:
         {
-            return avro_resolve_source(reader, source, dest, type_long);
+            return AVRO_RESOLVE_SOURCE(reader, source, dest, type_long);
         }
         case AVRO_INT32:
         {
-            return avro_resolve_source(reader, source, dest, type_int);
+            return AVRO_RESOLVE_SOURCE(reader, source, dest, type_int);
         }
         case AVRO_NULL:
         {
-            return avro_resolve_source(reader, source, dest, type_null);
+            return AVRO_RESOLVE_SOURCE(reader, source, dest, type_null);
         }
         case AVRO_STRING:
         {
-            return avro_resolve_source(reader, source, dest, type_string);
+            return AVRO_RESOLVE_SOURCE(reader, source, dest, type_string);
         }
         case AVRO_ARRAY:
         {
@@ -378,11 +378,11 @@ int read_value_with_resolution(avro_reader_t reader, avro_value_t *source, avro_
         }
         case AVRO_ENUM:
         {
-            return avro_resolve_source(reader, source, dest, type_enum);
+            return AVRO_RESOLVE_SOURCE(reader, source, dest, type_enum);
         }
         case AVRO_FIXED:
         {
-            return avro_resolve_source(reader, source, dest, type_fixed);
+            return AVRO_RESOLVE_SOURCE(reader, source, dest, type_fixed);
         }
         case AVRO_MAP:
         {
