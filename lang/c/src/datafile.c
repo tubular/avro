@@ -746,13 +746,14 @@ avro_file_reader_read_value(avro_file_reader_t r, avro_value_t *value)
 }
 
 int
-avro_file_reader_read_value_with_resolution(avro_file_reader_t r, avro_value_t *source, avro_value_t *value)
+avro_file_reader_read_value_with_resolution(avro_file_reader_t r, avro_value_t *source, avro_value_t *dest)
 {
     int rval;
     char sync[16];
 
     check_param(EINVAL, r, "reader");
-    check_param(EINVAL, value, "value");
+    check_param(EINVAL, source, "source");
+    check_param(EINVAL, dest, "dest");
 
     /* This will be set to zero when an empty file is opened.
      * Return EOF here when the user attempts to read. */
@@ -771,7 +772,7 @@ avro_file_reader_read_value_with_resolution(avro_file_reader_t r, avro_value_t *
         check(rval, file_read_block_count(r));
     }
 
-    check(rval, avro_value_read_with_resolution(r->block_reader, source, value));
+    check(rval, avro_value_read_with_resolution(r->block_reader, source, dest));
     r->blocks_read++;
 
     return 0;

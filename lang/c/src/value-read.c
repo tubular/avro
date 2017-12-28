@@ -28,18 +28,17 @@
 #include "encoding.h"
 #include "value-read.h"
 
-
 /*
  * Forward declaration; this is basically the same as avro_value_read,
  * but it doesn't reset dest first.  (Since it will have already been
  * reset in avro_value_read itself).
  */
 
-int
+static int
 read_value(avro_reader_t reader, avro_value_t *dest);
 
 
-int
+static int
 read_array_value(avro_reader_t reader, avro_value_t *dest)
 {
 	int  rval;
@@ -76,7 +75,7 @@ read_array_value(avro_reader_t reader, avro_value_t *dest)
 }
 
 
-int
+static int
 read_map_value(avro_reader_t reader, avro_value_t *dest)
 {
 	int  rval;
@@ -129,7 +128,7 @@ read_map_value(avro_reader_t reader, avro_value_t *dest)
 }
 
 
-int
+static int
 read_record_value(avro_reader_t reader, avro_value_t *dest)
 {
 	int  rval;
@@ -156,7 +155,7 @@ read_record_value(avro_reader_t reader, avro_value_t *dest)
 }
 
 
-int
+static int
 read_union_value(avro_reader_t reader, avro_value_t *dest)
 {
 	int rval;
@@ -219,7 +218,7 @@ avro_wrapped_alloc_new(avro_wrapped_buffer_t *dest,
 }
 
 
-int
+static int
 read_value(avro_reader_t reader, avro_value_t *dest)
 {
 	int  rval;

@@ -132,7 +132,7 @@ int avro_file_reader_close(avro_file_reader_t reader);
 int
 avro_file_reader_read_value(avro_file_reader_t reader, avro_value_t *dest);
 int
-avro_file_reader_read_value_with_resolution(avro_file_reader_t r, avro_value_t *source, avro_value_t *value);
+avro_file_reader_read_value_with_resolution(avro_file_reader_t r, avro_value_t *source, avro_value_t *dest);
 
 int
 avro_file_writer_append_value(avro_file_writer_t writer, avro_value_t *src);

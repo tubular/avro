@@ -193,6 +193,5 @@ int test_resolution()
 int main(void)
 {
     fprintf(stderr, "**** Running Schema Resolutions test ****\n");
-    test_resolution();
-    return 0;
+    return test_resolution();
 }
