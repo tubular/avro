@@ -814,6 +814,42 @@ const char *avro_schema_record_field_name(const avro_schema_t schema, int index)
 	return val.field->name;
 }
 
+json_t* avro_schema_record_field_default(const avro_schema_t schema, const char* field_name)
+{
+    int idx = avro_schema_record_field_get_index(schema, field_name);
+    union {
+        st_data_t data;
+        struct avro_record_field_t *field;
+    } val;
+    st_lookup(avro_schema_to_record(schema)->fields, idx, &val.data);
+    return val.field->default_value;
+}
+
+char* avro_get_default_string_value(json_t* json_default)
+{
+    return json_string_value(json_default);
+}
+
+int avro_get_default_int_value(json_t* json_default)
+{
+    return json_integer_value(json_default);
+}
+
+float avro_get_default_float_value(json_t* json_default)
+{
+    return (float)json_real_value(json_default);
+}
+
+double avro_get_default_double_value(json_t* json_default)
+{
+    return (double)json_real_value(json_default);
+}
+
+bool avro_get_default_bool_value(json_t* json_default)
+{
+    return (bool)json_is_true(json_default);
+}
+
 avro_schema_t avro_schema_record_field_get_by_index
 (const avro_schema_t record, int index)
 {

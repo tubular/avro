@@ -2371,30 +2371,13 @@ try_record(memoize_state_t *state, avro_resolved_writer_t **self,
 		int  wi = avro_schema_record_field_get_index(wschema, field_name);
 
 		if (wi == -1) {
-			/*
-			 * This field isn't in the writer schema —
-			 * that's an error!  TODO: Handle default
-			 * values!
-			 */
 
 			DEBUG("Field %s isn't in writer", field_name);
-
-			/* Allow missing fields in the writer. They
-			 * will default to zero. So skip over the
-			 * missing field, and continue building the
-			 * resolver. Note also that all missing values
-			 * are zero because avro_generic_value_new()
-			 * initializes all values of the reader to 0
-			 * on creation. This is a work-around because
-			 * default values are not implemented yet.
-			 */
-			#ifdef AVRO_ALLOW_MISSING_FIELDS_IN_RESOLVED_WRITER
+            /* Allow missing fields in the writer. If the field has
+             * default value specified, it will be resolved later.
+             */
 			continue;
-			#else
-			avro_set_error("Reader field %s doesn't appear in writer",
-				       field_name);
-			goto error;
-			#endif
+
 		}
 
 		/*

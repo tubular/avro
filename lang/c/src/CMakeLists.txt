@@ -70,7 +70,9 @@ set(AVRO_SRC
     value.c
     value-hash.c
     value-json.c
+    value-read.h
     value-read.c
+    value-read-resolution.c
     value-sizeof.c
     value-write.c
     wrapped-buffer.c
@@ -148,3 +150,4 @@ add_executable(avromod avromod.c)
 target_link_libraries(avromod avro-static)
 install(TARGETS avromod RUNTIME DESTINATION bin)
 endif(NOT WIN32)
+
