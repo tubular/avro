@@ -26,7 +26,7 @@
 #include "avro/value.h"
 #include "avro_private.h"
 #include "encoding.h"
-
+#include "value-read.h"
 
 /*
  * Forward declaration; this is basically the same as avro_value_read,
@@ -188,12 +188,7 @@ read_union_value(avro_reader_t reader, avro_value_t *dest)
  * allocated using avro_malloc.
  */
 
-struct avro_wrapped_alloc {
-	const void  *original;
-	size_t  allocated_size;
-};
-
-static void
+void
 avro_wrapped_alloc_free(avro_wrapped_buffer_t *self)
 {
 	struct avro_wrapped_alloc  *alloc = (struct avro_wrapped_alloc *) self->user_data;
@@ -201,7 +196,7 @@ avro_wrapped_alloc_free(avro_wrapped_buffer_t *self)
 	avro_freet(struct avro_wrapped_alloc, alloc);
 }
 
-static int
+int
 avro_wrapped_alloc_new(avro_wrapped_buffer_t *dest,
 		       const void *buf, size_t length)
 {
