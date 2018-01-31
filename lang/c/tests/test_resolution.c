@@ -50,7 +50,9 @@ int test_resolution()
     "           { \"name\": \"sub_a\", \"type\": \"double\" }"
     "       ]}"
     "    },"
-    "    { \"name\": \"g\", \"type\": \"string\", \"default\": \"default g\" }"
+    "    { \"name\": \"g\", \"type\": \"string\", \"default\": \"default g\" },"
+    "    { \"name\": \"h\", \"type\": [\"string\", \"float\"], \"default\": \"default h\"  },"
+    "    { \"name\": \"i\", \"type\": [\"null\", \"float\"], \"default\": null }"
     "  ]"
     "}";
     
@@ -184,6 +186,20 @@ int test_resolution()
         fprintf(stderr, " g: %s \n", str_val);
         CHECK_STRING_CASE(str_val, "default g", "Default value resolution failed");
         
+        avro_value_get_by_name(&out_val, "h", &field, NULL);
+        avro_value_t  branch_str;
+        avro_value_get_current_branch(&field, &branch_str);
+        char* branch_value_str;
+        size_t str_sz = 0;
+        avro_value_get_string(&branch_str, &branch_value_str, &str_sz);
+        fprintf(stderr, " h: %s\n", branch_value);
+        CHECK_STRING_CASE(branch_value_str, "default h", "Union resolution failed");
+
+        avro_value_get_by_name(&out_val, "i", &field, NULL);
+        avro_value_t  branch_null;
+        avro_value_get_current_branch(&field, &branch_null);
+        CHECK_CASE(avro_value_get_null(&branch_null), 0, "Cannot get null value!");
+
     }
     avro_file_reader_close(file_read);
     return 0;
