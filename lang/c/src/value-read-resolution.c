@@ -84,59 +84,59 @@ static int read_record_value_with_resolution(avro_reader_t reader, avro_value_t 
      * `source` value is the actual value in writers schema,
      * `dest` value is the value of readers schema that we have to resolve `source` into.
      * First, we read all the writers fields. If the field is in `source` schema, but not in `dest`
-     * we skip it. If the field is in both reader and writer, then we trying to perform schema resolution 
+     * we skip it. If the field is in both reader and writer, then we trying to perform schema resolution
      * for these fields. If the field is in reader's schema, but not writer's schema it must have default
      * value set. If the default is set, we read this value into `dest` value.
      */
     int  rval;
     size_t  field_count;
     size_t  i;
-    
+
     avro_schema_t  record_schema_reader = avro_value_get_schema(dest);
     avro_schema_t  record_schema_writer = avro_value_get_schema(source);
-    
+
     size_t reader_fields_count;
     size_t writers_fields_count;
-    
+
     check(rval, avro_value_get_size(dest, &reader_fields_count));
     check(rval, avro_value_get_size(source, &writers_fields_count));
-    
+
     // map to keep track of already resolved fields.
     st_table* reader_fields_table = st_init_strtable();
-    
+
     // loop writers fields
     for(i = 0; i<writers_fields_count; ++i)
     {
         avro_value_t field;
         check(rval, avro_value_get_by_index(source, i, &field, NULL));
         char* field_name =  avro_schema_record_field_name(record_schema_writer, i);
-        
+
         int reader_index = avro_schema_record_field_get_index(record_schema_reader, field_name);
-        
+
         if (reader_index > -1) {
             // ok, reader's schema has the field with the same name too,
             // lets do schema resolution.
             avro_value_t reader_field;
             check(rval, avro_value_get_by_index(dest, reader_index, &reader_field, NULL));
-            
+
             check(rval, read_value_with_resolution(reader, &field, &reader_field));
 
             st_insert(reader_fields_table, (st_data_t) field_name, &reader_field);
-            
+
         } else {
             // reader's schema doesn't have this field, skip it.
             avro_schema_t  field_schema = avro_schema_record_field_get_by_index(record_schema_writer, i);
             check(rval, avro_skip_data(reader, field_schema));
         }
     }
-    
+
     // Check remaining reader's schema fields for default values.
     for(i = 0; i<reader_fields_count; ++i)
     {
         avro_value_t field;
         check(rval, avro_value_get_by_index(dest, i, &field, NULL));
         char* readers_field_name = avro_schema_record_field_name(record_schema_reader, i);
-        
+
         st_data_t  data;
         if(st_lookup(reader_fields_table, (st_data_t) readers_field_name, &data) == 0)
         {
@@ -185,7 +185,7 @@ static int resolve_type_bytes_source(avro_reader_t reader, avro_value_t *source,
     check_prefix(rval, avro_binary_encoding.
                  read_bytes(reader, &bytes, &len),
                  "Cannot read bytes value: ");
-    
+
     /*
      * read_bytes allocates an extra byte to always
      * ensure that the data is NUL terminated, but
@@ -193,9 +193,9 @@ static int resolve_type_bytes_source(avro_reader_t reader, avro_value_t *source,
      * include that extra byte in the allocated
      * size, but not in the length of the buffer.
      */
-    
+
     avro_wrapped_buffer_t  buf;
-    check(rval, avro_wrapped_alloc_new(&buf, bytes, len+1));
+    check(rval, avro_wrapped_alloc_new(&buf, bytes, len));
     switch(avro_value_get_type(dest))
     {
             // Bytes type is promotable to String
@@ -244,7 +244,7 @@ static int resolve_type_long_source(avro_reader_t reader, avro_value_t *source, 
     check_prefix(rval, avro_binary_encoding.
                  read_long(reader, &val),
                  "Cannot read long value: ");
-    
+
     // Int64 is promotable to Float and Double
     switch(avro_value_get_type(dest)){
         case AVRO_FLOAT:
@@ -294,7 +294,7 @@ static int resolve_type_string_source(avro_reader_t reader, avro_value_t *source
     int rval;
     char  *str;
     int64_t  size;
-    
+
     /*
      * read_string returns a size that includes the
      * NUL terminator, and the free function will be
@@ -303,7 +303,7 @@ static int resolve_type_string_source(avro_reader_t reader, avro_value_t *source
     check_prefix(rval, avro_binary_encoding.
                  read_string(reader, &str, &size),
                  "Cannot read string value: ");
-    
+
     avro_wrapped_buffer_t  buf;
     check(rval, avro_wrapped_alloc_new(&buf, str, size));
     return avro_value_give_string_len(dest, &buf);
@@ -325,7 +325,7 @@ static int resolve_type_fixed_source(avro_reader_t reader, avro_value_t *source,
     avro_schema_t  schema = avro_value_get_schema(dest);
     char *bytes;
     int64_t size = avro_schema_fixed_size(schema);
-    
+
     bytes = (char *) avro_malloc(size);
     if (!bytes) {
         avro_prefix_error("Cannot allocate new fixed value");
@@ -337,14 +337,14 @@ static int resolve_type_fixed_source(avro_reader_t reader, avro_value_t *source,
         avro_free(bytes, size);
         return rval;
     }
-    
+
     avro_wrapped_buffer_t  buf;
     rval = avro_wrapped_alloc_new(&buf, bytes, size);
     if (rval != 0) {
         avro_free(bytes, size);
         return rval;
     }
-    
+
     return avro_value_give_fixed(dest, &buf);
 }
 
@@ -419,7 +419,7 @@ int read_value_with_resolution(avro_reader_t reader, avro_value_t *source, avro_
         }
 
     }
-    
+
     return 0;
 }
 
@@ -442,7 +442,7 @@ read_union_value_with_resolution(avro_reader_t reader, avro_value_t *source, avr
 {
     avro_schema_t wschema = avro_value_get_schema(source);
     avro_schema_t rschema = avro_value_get_schema(dest);
-    
+
     int wtype = avro_value_get_type(source);
     int rtype = avro_value_get_type(dest);
     if ( (rtype == AVRO_UNION) && (wtype == AVRO_UNION))
@@ -515,18 +515,18 @@ int resolve_unions(avro_reader_t reader, avro_value_t *source, avro_value_t *des
     avro_schema_t  union_schema_source;
     int64_t  branch_count_source;
     avro_value_t  branch_source;
-    
+
     avro_schema_t  union_schema_dest;
     int64_t  branch_count_dest;
     avro_value_t  branch_dest;
-    
+
     check_prefix(rval, avro_binary_encoding.
                  read_long(reader, &discriminant),
                  "Cannot read union discriminant: ");
 
     union_schema_source = avro_value_get_schema(source);
     branch_count_source = avro_schema_union_size(union_schema_source);
-    
+
     union_schema_dest = avro_value_get_schema(dest);
     branch_count_dest = avro_schema_union_size(union_schema_dest);
     if (discriminant < 0 || discriminant >= branch_count_source) {
@@ -534,7 +534,7 @@ int resolve_unions(avro_reader_t reader, avro_value_t *source, avro_value_t *des
                        discriminant);
         return EINVAL;
     }
-    
+
     check_prefix(rval,
                  avro_value_set_branch(source, discriminant, &branch_source),
                  "Cannot set current branch");
@@ -564,11 +564,11 @@ read_array_value_with_resolution(avro_reader_t reader, avro_value_t* source, avr
     size_t  index = 0;  /* index within the entire array */
     int64_t  block_count;
     int64_t  block_size;
-    
+
     check_prefix(rval, avro_binary_encoding.
                  read_long(reader, &block_count),
                  "Cannot read array block count: ");
-    
+
     while (block_count != 0) {
         if (block_count < 0) {
             block_count = block_count * -1;
@@ -576,23 +576,23 @@ read_array_value_with_resolution(avro_reader_t reader, avro_value_t* source, avr
                          read_long(reader, &block_size),
                          "Cannot read array block size: ");
         }
-        
+
         for (i = 0; i < (size_t) block_count; i++, index++) {
             avro_value_t  child;
             check(rval, avro_value_append(dest, &child, NULL));
-            
+
             // need source's child to read data into.
             avro_value_t source_child;
             check(rval, avro_value_append(source, &source_child, NULL));
-            
+
             check(rval, read_value_with_resolution(reader, &source_child, &child));
         }
-        
+
         check_prefix(rval, avro_binary_encoding.
                      read_long(reader, &block_count),
                      "Cannot read array block count: ");
     }
-    
+
     return 0;
 }
 
@@ -604,10 +604,10 @@ read_map_value_with_resolution(avro_reader_t reader, avro_value_t *source, avro_
     size_t  index = 0;  /* index within the entire array */
     int64_t  block_count;
     int64_t  block_size;
-    
+
     check_prefix(rval, avro_binary_encoding.read_long(reader, &block_count),
                  "Cannot read map block count: ");
-    
+
     while (block_count != 0) {
         if (block_count < 0) {
             block_count = block_count * -1;
@@ -615,7 +615,7 @@ read_map_value_with_resolution(avro_reader_t reader, avro_value_t *source, avro_
                          read_long(reader, &block_size),
                          "Cannot read map block size: ");
         }
-        
+
         for (i = 0; i < (size_t) block_count; i++, index++) {
             char *key;
             int64_t key_size;
@@ -623,13 +623,13 @@ read_map_value_with_resolution(avro_reader_t reader, avro_value_t *source, avro_
             check_prefix(rval, avro_binary_encoding.
                          read_string(reader, &key, &key_size),
                          "Cannot read map key: ");
-            
+
             rval = avro_value_add(dest, key, &child, NULL, NULL);
             if (rval) {
                 avro_free(key, key_size);
                 return rval;
             }
-            
+
             // need source's child to read data into.
             avro_value_t  child_source;
             rval = avro_value_add(source, key, &child_source, NULL, NULL);
@@ -637,20 +637,20 @@ read_map_value_with_resolution(avro_reader_t reader, avro_value_t *source, avro_
                 avro_free(key, key_size);
                 return rval;
             }
-            
+
             rval = read_value_with_resolution(reader, &child_source, &child);
             if (rval) {
                 avro_free(key, key_size);
                 return rval;
             }
-            
+
             avro_free(key, key_size);
         }
-        
+
         check_prefix(rval, avro_binary_encoding.
                      read_long(reader, &block_count),
                      "Cannot read map block count: ");
     }
-    
+
     return 0;
 }
