@@ -31,10 +31,11 @@ int test_resolution()
     "       { \"type\": \"record\", \"name\": \"sub\", \"fields\": ["
     "           { \"name\": \"sub_a\", \"type\": \"int\" }"
     "       ]}"
-    "    }"
+    "    },"
+    "   {\"name\": \"j\", \"type\": \"bytes\"}"
     "  ]"
     "}";
-    
+
     const char* out_schema_json =
     "{"
     "  \"type\": \"record\","
@@ -52,36 +53,37 @@ int test_resolution()
     "    },"
     "    { \"name\": \"g\", \"type\": \"string\", \"default\": \"default g\" },"
     "    { \"name\": \"h\", \"type\": [\"string\", \"float\"], \"default\": \"default h\"  },"
-    "    { \"name\": \"i\", \"type\": [\"null\", \"float\"], \"default\": null }"
+    "    { \"name\": \"i\", \"type\": [\"null\", \"float\"], \"default\": null },"
+    "    { \"name\": \"j\", \"type\": \"bytes\"}"
     "  ]"
     "}";
-    
+
     float expected = 62.0;
     const char* file_name = "test_resolution1.dat";
-    
+
     // Float schema value
     avro_schema_error_t  error;
     avro_value_t in_val;
     avro_schema_t in_schema;
     avro_schema_from_json(in_schema_json, 0, &in_schema, &error);
-    
-    
+
+
     avro_file_writer_t  file;
     avro_file_writer_create(file_name, in_schema, &file);
     avro_value_iface_t  *in_class = avro_generic_class_from_schema(in_schema);
     avro_generic_value_new(in_class, &in_val);
-    
+
     // In record
     avro_value_t  field;
     avro_value_get_by_name(&in_val, "a", &field, NULL);
     avro_value_set_int(&field, 1);
-    
+
     avro_value_get_by_name(&in_val, "b", &field, NULL);
     avro_value_set_float(&field, 2.0);
-    
+
     avro_value_get_by_name(&in_val, "c", &field, NULL);
     avro_value_set_double(&field, 3.0);
-    
+
     // array
     avro_value_get_by_name(&in_val, "d", &field, NULL);
     int  j;
@@ -92,27 +94,32 @@ int test_resolution()
         avro_value_append(&field, &element, &new_index);
         avro_value_set_int(&element, j);
     }
-    
+
     // union
     avro_value_get_by_name(&in_val, "e", &field, NULL);
     avro_value_t branch;
     avro_value_get_current_branch(&field, &branch);
     avro_value_set_branch(&field, 0, &branch);
     avro_value_set_null(&branch);
-    
+
     avro_value_set_branch(&field, 1, &branch);
     avro_value_set_float(&branch, 5.0);
-    
+
     // record
     avro_value_get_by_name(&in_val, "f", &field, NULL);
     avro_value_t sub_field;
     avro_value_get_by_name(&field, "sub_a", &sub_field, NULL);
     avro_value_set_int(&sub_field, 6);
-    
+
+    // bytes
+    avro_value_get_by_name(&in_val, "j", &field, NULL);
+    char bytes[] = { 0xDE, 0xAD, 0xBE, 0xEF };
+    avro_value_set_bytes(&field, bytes, sizeof(bytes));
+
     avro_file_writer_append_value(file, &in_val);
     avro_file_writer_close(file);
     fprintf(stderr, "Values written!  Reading...\n");
-    
+
     avro_file_reader_t  file_read;
     avro_file_reader(file_name, &file_read);
     // Double schema value
@@ -123,10 +130,10 @@ int test_resolution()
     {
         fprintf(stderr, "Schema not created\n");
     }
-    
+
     avro_value_iface_t  *out_class = avro_generic_class_from_schema(out_schema);
     avro_generic_value_new(out_class, &out_val);
-    
+
     while (avro_file_reader_read_value_with_resolution(file_read, &in_val, &out_val) == 0)
     {
         fprintf(stderr, "Reading record!\n");
@@ -136,13 +143,13 @@ int test_resolution()
         avro_value_get_float(&field, &int_val);
         fprintf(stderr, " a: %f \n", int_val);
         CHECK_CASE(int_val, (float) 1, "Promote int to float failed.");
-        
+
         avro_value_get_by_name(&out_val, "b", &field, NULL);
         double double_val = -1;
         avro_value_get_double(&field, &double_val);
         fprintf(stderr, " b: %f \n", double_val);
         CHECK_CASE(double_val, (double) 2.0, "Promote float to double failed.");
-        
+
         avro_value_get_by_name(&out_val, "c", &field, NULL);
         avro_value_get_double(&field, &double_val);
         fprintf(stderr, " c: %f \n", double_val);
@@ -162,7 +169,7 @@ int test_resolution()
             CHECK_CASE(element_value, (double) i, "Array resolution failed");
         }
         fprintf(stderr, "\n");
-        
+
         avro_value_get_by_name(&out_val, "e", &field, NULL);
         avro_value_t  branch;
         avro_value_get_current_branch(&field, &branch);
@@ -185,7 +192,7 @@ int test_resolution()
         avro_value_get_string(&field, &str_val, &sz);
         fprintf(stderr, " g: %s \n", str_val);
         CHECK_STRING_CASE(str_val, "default g", "Default value resolution failed");
-        
+
         avro_value_get_by_name(&out_val, "h", &field, NULL);
         avro_value_t  branch_str;
         avro_value_get_current_branch(&field, &branch_str);
@@ -199,6 +206,23 @@ int test_resolution()
         avro_value_t  branch_null;
         avro_value_get_current_branch(&field, &branch_null);
         CHECK_CASE(avro_value_get_null(&branch_null), 0, "Cannot get null value!");
+
+        const void* actual_buf = NULL;
+        size_t actual_siz = 0;
+        avro_value_get_by_name(&out_val, "j", &field, NULL);
+        avro_value_get_bytes(&field, &actual_buf, &actual_size);
+
+        if (actual_size != sizeof(bytes))
+        {
+            fprintf(stderr, "Unexpected bytes size\n");
+            return EXIT_FAILURE;
+        }
+
+        if(memcmp(actual_buf, bytes, actual_size) != 0)
+        {
+            fprintf(stderr, "Unexpected bytes contents\n");
+            return EXIT_FAILURE;
+        }
 
     }
     avro_file_reader_close(file_read);
