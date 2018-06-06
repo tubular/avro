@@ -16,9 +16,9 @@
 /*
  * Populate avro_value_t with default value specified in schema.
  */
-static int read_default_value(avro_schema_t reader_schema, const char* field_name, avro_value_t *dest)
+
+static int do_set_default_value(json_t* def_val, avro_value_t *dest)
 {
-    json_t* def_val = avro_schema_record_field_default(reader_schema, field_name);
     switch (avro_value_get_type(dest)) {
         case AVRO_STRING:
         case AVRO_BYTES:
@@ -53,9 +53,25 @@ static int read_default_value(avro_schema_t reader_schema, const char* field_nam
             bool val = avro_get_default_bool_value(def_val);
             return avro_value_set_boolean(dest, val);
         }
+        case AVRO_NULL:
+        {
+            return avro_value_set_null(dest);
+        }
+        case AVRO_UNION:
+        {
+            avro_value_t  branch_dest;
+            avro_value_set_branch(dest, 0, &branch_dest);
+            return do_set_default_value(def_val, &branch_dest);
+        }
     }
     avro_set_error("Cannot read default value for specified type.");
     return EINVAL;
+}
+
+static int read_default_value(avro_schema_t reader_schema, const char* field_name, avro_value_t *dest)
+{
+    json_t* def_val = avro_schema_record_field_default(reader_schema, field_name);
+    return do_set_default_value(def_val, dest);
 }
 
 /*
