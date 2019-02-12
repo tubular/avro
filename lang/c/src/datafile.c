@@ -525,16 +525,18 @@ int avro_file_reader_fp(FILE *fp, const char *path, int should_close,
 
 	r->current_blockdata = NULL;
 	r->current_blocklen = 0;
+	r->blocks_total = 0;
 
 	rval = file_read_block_count(r);
-	if (rval == EOF) {
-		r->blocks_total = 0;
-	} else if (rval) {
-		avro_reader_free(r->reader);
-		avro_codec_reset(r->codec);
-		avro_freet(struct avro_codec_t_, r->codec);
-		avro_freet(struct avro_file_reader_t_, r);
-		return rval;
+	if (!avro_reader_is_eof(r->reader)) {
+		rval = file_read_block_count(r);
+		if (rval) {
+			avro_reader_free(r->reader);
+			avro_codec_reset(r->codec);
+			avro_freet(struct avro_codec_t_, r->codec);
+			avro_freet(struct avro_file_reader_t_, r);
+			return rval;
+		}
 	}
 
 	*reader = r;
