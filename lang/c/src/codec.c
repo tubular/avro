@@ -32,7 +32,11 @@
 #endif
 #ifdef LZ4_CODEC
 #include <lz4.h>
-#include <endian.h>
+#  if defined(__APPLE__) && defined(__MACH__)
+#    include <machine/endian.h>
+#  else
+#    include <endian.h>
+#  endif
 #  ifndef SNAPPY_CODEC
 #    if defined(__APPLE__)
 #      include <libkern/OSByteOrder.h>
