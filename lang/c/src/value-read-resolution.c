@@ -10,6 +10,7 @@
 #include "avro_private.h"
 #include "encoding.h"
 #include "value-read.h"
+#include "value-read-resolution.h"
 #include "st.h"
 
 
