@@ -346,41 +346,37 @@ class BinaryDecoder:
 
         return datetime.time(hour=hours, minute=minutes, second=seconds, microsecond=microseconds)
 
-    def read_time_millis_from_int(self) -> datetime.time:
+    def read_time_millis_from_int(self) -> int:
         """
-        int is decoded as python time object which represents
+        int is decoded as python int object which represents
         the number of milliseconds after midnight, 00:00:00.000.
         """
         milliseconds = self.read_int()
-        return self._build_time_object(milliseconds, 1000)
+        return milliseconds
 
-    def read_time_micros_from_long(self) -> datetime.time:
+    def read_time_micros_from_long(self) -> int:
         """
-        long is decoded as python time object which represents
+        long is decoded as python int which represents
         the number of microseconds after midnight, 00:00:00.000000.
         """
         microseconds = self.read_long()
-        return self._build_time_object(microseconds, 1)
+        return microseconds
 
-    def read_timestamp_millis_from_long(self) -> datetime.datetime:
+    def read_timestamp_millis_from_long(self) -> int:
         """
-        long is decoded as python datetime object which represents
+        long is decoded as python int which represents
         the number of milliseconds from the unix epoch, 1 January 1970.
         """
         timestamp_millis = self.read_long()
-        timedelta = datetime.timedelta(microseconds=timestamp_millis * 1000)
-        unix_epoch_datetime = datetime.datetime(1970, 1, 1, 0, 0, 0, 0, tzinfo=avro.timezones.utc)
-        return unix_epoch_datetime + timedelta
+        return timestamp_millis
 
-    def read_timestamp_micros_from_long(self) -> datetime.datetime:
+    def read_timestamp_micros_from_long(self) -> int:
         """
-        long is decoded as python datetime object which represents
+        long is decoded as python int which represents
         the number of microseconds from the unix epoch, 1 January 1970.
         """
         timestamp_micros = self.read_long()
-        timedelta = datetime.timedelta(microseconds=timestamp_micros)
-        unix_epoch_datetime = datetime.datetime(1970, 1, 1, 0, 0, 0, 0, tzinfo=avro.timezones.utc)
-        return unix_epoch_datetime + timedelta
+        return timestamp_micros
 
     def skip_null(self) -> None:
         pass
@@ -675,18 +671,8 @@ class DatumReader:
         if writers_schema.type == "string":
             return decoder.read_utf8()
         if writers_schema.type == "int":
-            if logical_type == avro.constants.DATE:
-                return decoder.read_date_from_int()
-            if logical_type == avro.constants.TIME_MILLIS:
-                return decoder.read_time_millis_from_int()
             return decoder.read_int()
         if writers_schema.type == "long":
-            if logical_type == avro.constants.TIME_MICROS:
-                return decoder.read_time_micros_from_long()
-            if logical_type == avro.constants.TIMESTAMP_MILLIS:
-                return decoder.read_timestamp_millis_from_long()
-            if logical_type == avro.constants.TIMESTAMP_MICROS:
-                return decoder.read_timestamp_micros_from_long()
             return decoder.read_long()
         if writers_schema.type == "float":
             return decoder.read_float()

@@ -1074,18 +1074,23 @@ def make_bytes_decimal_schema(other_props):
 
 def make_logical_schema(logical_type, type_, other_props):
     """Map the logical types to the appropriate literal type and schema class."""
+    timestamp_types = {
+        (avro.constants.TIMESTAMP_MICROS, "long"),
+        (avro.constants.TIMESTAMP_MILLIS, "long"),
+        (avro.constants.TIME_MICROS, "long"),
+        (avro.constants.TIME_MILLIS, "int"),
+    }
+
     logical_types = {
         (avro.constants.DATE, "int"): DateSchema,
         (avro.constants.DECIMAL, "bytes"): make_bytes_decimal_schema,
         # The fixed decimal schema is handled later by returning None now.
         (avro.constants.DECIMAL, "fixed"): lambda x: None,
-        (avro.constants.TIMESTAMP_MICROS, "long"): TimestampMicrosSchema,
-        (avro.constants.TIMESTAMP_MILLIS, "long"): TimestampMillisSchema,
-        (avro.constants.TIME_MICROS, "long"): TimeMicrosSchema,
-        (avro.constants.TIME_MILLIS, "int"): TimeMillisSchema,
         (avro.constants.UUID, "string"): UUIDSchema,
     }
     try:
+        if (logical_type, type_) in timestamp_types:
+            return PrimitiveSchema(type_)
         schema_type = logical_types.get((logical_type, type_), None)
         if schema_type is not None:
             return schema_type(other_props)
