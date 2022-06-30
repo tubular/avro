@@ -1031,6 +1031,23 @@ class TimestampMicrosSchema(LogicalSchema, PrimitiveSchema):
 
 
 #
+# timestamp-seconds Type
+#
+
+
+class TimestampSecondsSchema(LogicalSchema, PrimitiveSchema):
+    def __init__(self, other_props=None):
+        LogicalSchema.__init__(self, avro.constants.TIMESTAMP_SECONDS)
+        PrimitiveSchema.__init__(self, "long", other_props)
+
+    def to_json(self, names=None):
+        return self.props
+
+    def validate(self, datum):
+        return self if isinstance(datum, datetime.datetime) and _is_timezone_aware_datetime(datum) else None
+
+
+#
 # uuid Type
 #
 
@@ -1081,6 +1098,7 @@ def make_logical_schema(logical_type, type_, other_props):
         (avro.constants.DECIMAL, "fixed"): lambda x: None,
         (avro.constants.TIMESTAMP_MICROS, "long"): TimestampMicrosSchema,
         (avro.constants.TIMESTAMP_MILLIS, "long"): TimestampMillisSchema,
+        (avro.constants.TIMESTAMP_SECONDS, "long"): TimestampSecondsSchema,
         (avro.constants.TIME_MICROS, "long"): TimeMicrosSchema,
         (avro.constants.TIME_MILLIS, "int"): TimeMillisSchema,
         (avro.constants.UUID, "string"): UUIDSchema,
