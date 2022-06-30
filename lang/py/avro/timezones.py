@@ -21,18 +21,7 @@ import datetime
 from typing import Optional
 
 
-class UTCTzinfo(datetime.tzinfo):
-    def utcoffset(self, dt: Optional[datetime.datetime] = None) -> datetime.timedelta:
-        return datetime.timedelta(0)
-
-    def tzname(self, dt: Optional[datetime.datetime] = None) -> str:
-        return "UTC"
-
-    def dst(self, dt: Optional[datetime.datetime] = None) -> datetime.timedelta:
-        return datetime.timedelta(0)
-
-
-utc = UTCTzinfo()
+utc = datetime.timezone.utc
 
 
 # Test Time Zone with fixed offset and no DST
