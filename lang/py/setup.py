@@ -19,9 +19,7 @@
 
 
 import distutils.errors
-import glob
 import os
-import subprocess
 
 import setuptools  # type: ignore
 
@@ -104,20 +102,6 @@ class GenerateInteropDataCommand(setuptools.Command):
             os.makedirs(self.output_path)
         with open(self.schema_file) as schema_file, open(os.path.join(self.output_path, "py.avro"), "wb") as output:
             avro.test.gen_interop_data.generate(schema_file, output)
-
-
-def _get_version():
-    curdir = os.getcwd()
-    if os.path.isfile("avro/VERSION.txt"):
-        version_file = "avro/VERSION.txt"
-    else:
-        index = curdir.index("lang/py")
-        path = curdir[:index]
-        version_file = os.path.join(path, "share/VERSION.txt")
-    with open(version_file) as verfile:
-        # To follow the naming convention defined by PEP 440
-        # in the case that the version is like "x.y.z-SNAPSHOT"
-        return verfile.read().rstrip().replace("-", "+")
 
 
 def main():
